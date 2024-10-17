@@ -1,11 +1,15 @@
 #!/bin/bash
 
+#*Author: Tridib Banik, Student Number: 400514461, MacID: banikt 
+#*This Bash script allows users to search for the rankings (popularity) of baby names in a particular year between 1880 and 2022.
+#*/
+
 # Function to output usage string to stderr
 usage() {
     echo "bn <year> <assigned gender: f|F|m|M|b|B>" >&2
 }
 
-# Function to print help text to stdout
+# Function to output help text to stdout
 help() {
     echo "bn - Baby Names Ranking Utility v1.0.0"
     echo
@@ -22,91 +26,123 @@ help() {
     echo "  Provide whitespace-separated baby names via standard input."
 }
 
-# Function to rank a single name
+#Function to rank a single name based on the provided year and gender
 rank() {
+    #baby name
     local name="$1"
+    #First argument: year
     local year="$2"
+    #Second argument: gender
     local gender="$3"
+    #Data file for the year indicated by first argument 
     local file="us_baby_names/yob${year}.txt"
     
-    # Check if file exists for the given year
-    if [ ! -f "$file" ]; then
+    #Check if file exists for the specified year
+    if [[ ! -f "$file" ]]
+    then
         echo "No data file exists for the year $year." >&2
+        #If the file is missing, exit with code 4.
         exit 4
     fi
 
-    # Check if name is valid (only alphabetical characters)
-    if ! [[ "$name" =~ ^[a-zA-Z]+$ ]]; then
+    #Check if name is valid (valid baby name contains only alphabetical characters)
+    if ! [[ "$name" =~ ^[a-zA-Z]+$ ]]
+    then
         echo "Badly formatted name: $name" >&2
+        #If the name is invalid (i.e., contains digits), exit with code 3.
         exit 3
     fi
 
-    local findMale=$(grep -P -i "^${name},M," "$file")
-    local findFemale=$(grep -P -i "^${name},F," "$file")
+    #Search for the name in male name list for specific year's text file
+    local findMale=$(cat $file | grep -P -i "^${name},M,")
+    #Search for the name in female name list
+    local findFemale=$(cat $file | grep -P -i "^${name},F,")
 
-    # Search ranking based on the gender
-    if [[ "$gender" =~ ^[mM]$ ]]; then
+    #Search ranking based on the gender, which was the second argument 
+    if [[ "$gender" =~ ^[mM]$ ]]
+    then
         rank_single_gender "$name" "$year" "$file" "M" "male" "$findMale"
-    elif [[ "$gender" =~ ^[fF]$ ]]; then
+    elif [[ "$gender" =~ ^[fF]$ ]]
+    then
         rank_single_gender "$name" "$year" "$file" "F" "female" "$findFemale"
-    elif [[ "$gender" =~ ^[bB]$ ]]; then
+    #For both gender, both male list and female list are checked.
+    elif [[ "$gender" =~ ^[bB]$ ]]
+    then
         rank_single_gender "$name" "$year" "$file" "M" "male" "$findMale"
         rank_single_gender "$name" "$year" "$file" "F" "female" "$findFemale"
     fi
 }
 
-# Function to rank a name based on a single gender
+# Function to rank a name based for a single gender
 rank_single_gender() {
     local name="$1"
     local year="$2"
     local file="$3"
+    #Gender code 'M' indicates male and 'F' indicates female
     local gender_code="$4"
+    #Gender name is either male or female
     local gender_name="$5"
+    #Search match for the name in the file
     local find="$6"
 
-    if [ -z "$find" ]; then
+    #If the name is not found for the desired gender category
+    if [[ "$find" = "" ]]
+    then
         echo "$year: $name not found among $gender_name names."
     else
-        local numberOfNames=$(grep ",$gender_code," "$file" | wc -l)
-        local rank=$(grep -P -i ",$gender_code," "$file" | grep -P -o -i -n "^${name},$gender_code," | cut -d: -f1)
+        #numberOfNames refers to the total number of male or female names in the entire text document.
+        local numberOfNames=$(cat $file | grep ",$gender_code," | wc -l)
+        #For the specific gender, first all given gender names are prepared and then the name is searched in that smaller list
+        #The line number of the name is separated by the delimiter : (colon). So, rank only gets the line number, which is the ranking.
+        local rank=$(cat $file | grep -P -i ",$gender_code," | grep -P -o -i -n "^${name},$gender_code," | cut -d: -f1)
         echo "$year: $name ranked $rank out of $numberOfNames $gender_name names."
     fi
 }
 
 # Main script logic
-
-if [[ "$1" == "--help" ]]; then
+# Check if the first argument is the help flag
+if [[ "$1" == "--help" ]]
+then
     help
     exit 0
 fi
 
-# Validate argument count
-if [[ "$#" -ne 2 ]]; then
+#Validate if exactly two arguments (year and gender) are provided
+if [[ "$#" -ne 2 ]]
+then
     usage
     exit 1
 fi
 
+#Assign the year argument
 year="$1"
+#Assign the gender argument
 gender="$2"
 
-# Validate gender input
-if ! [[ "$gender" =~ ^[fFmMbB]$ ]]; then
+#Validate gender input, which must be m, M, f, F, b, or B
+if ! [[ "$gender" =~ ^[fFmMbB]$ ]]
+then
     echo "Badly formatted assigned gender: $gender" >&2
     usage
+    #If the gender is not valid, exit with code 2.
     exit 2
 fi
 
-# Validate year input
-if [[ "$year" -gt 2022 || "$year" -lt 1880 ]]; then
+#Validate year input, which must be between 1880 and 2022.
+if [[ "$year" -gt 2022 || "$year" -lt 1880 ]]
+then
     echo "No data for $year" >&2
+    #If the year is out of the valid range, exit with code 4.
     exit 4
 fi
 
-# Process names from stdin
-while IFS= read -r line
+#Read inputs from standard input
+while read -r line
 do
+    #Go through each name in the standard input
     for name in $line
     do
+        #Call the rank() function for each name from the standard input.
         rank "$name" "$year" "$gender"
     done
 done
