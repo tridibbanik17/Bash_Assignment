@@ -1,23 +1,28 @@
-name: CI - Test bn Utility  # Name of the CI workflow
+name: CI - Test bn Utility  #Name of the CI workflow
 
-on:  # Trigger for the workflow
-  push:  # Trigger the workflow on a push event
-    branches: [ "main" ]  # Specify that the workflow should run when code is pushed to the "main" branch
 
-jobs:  # Define jobs in the workflow
-  test:  # This is the name of the test job
-    runs-on: ubuntu-latest  # The job will run on the latest version of Ubuntu
+on:  #Trigger for the workflow
+  push:  #Trigger the workflow on a push event
+    branches: [ "main" ]  #Specify that the workflow should run when code is pushed to the "main" branch
 
-    steps:  # Steps to execute in the job
-      - uses: actions/checkout@v4  # Step to check out the repository code from GitHub
 
-      - name: Run Tests  # Subtask name to run tests
-        run: ./test_script > test_results.txt  # Command to run the test script and output results to a file
+jobs:  #Define jobs in the workflow
+  test:  #This is the name of the test job
+    runs-on: ubuntu-latest  #The job will run on the latest version of Ubuntu
 
-      - name: Upload Test Results  # Subtask name to upload test results
-        if: ${{ always() }}  # Ensures that this step runs even if the previous one fails
-        uses: actions/upload-artifact@v4  # Action to upload a file as an artifact
+
+    steps:  #Steps to execute in the job
+      - uses: actions/checkout@v4  #Step to check out the repository code from GitHub
+
+
+      - name: Run Tests  #Subtask name to run tests
+        run: ./test_script > test_results.txt  #Command to run test_script and output results to a file
+
+
+      - name: Upload Test Results  #Subtask name to upload test results
+        if: ${{ always() }}  #Ensures that this step runs even if the previous one fails
+        uses: actions/upload-artifact@v4  #Action to upload a file as an artifact
         with:
-          name: Test Results  # Name of the artifact being uploaded
-          path: ./test_results.txt  # Path to the file to upload
+          name: Test Results  #Name of the artifact being uploaded
+          path: ./test_results.txt  #Path to the file to upload
 
